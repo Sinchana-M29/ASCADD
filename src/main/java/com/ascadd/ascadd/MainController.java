@@ -2,6 +2,7 @@ package com.ascadd.ascadd;
 
 import com.ascadd.ascadd.Aircraft;
 import com.ascadd.ascadd.AircraftState;
+import com.ascadd.ascadd.CSVExporter;
 import com.ascadd.ascadd.DeadlockDetector;
 import com.ascadd.ascadd.StateMachine;
 import javafx.fxml.FXML;
@@ -22,12 +23,13 @@ public class MainController {
     private List<Aircraft> aircraftList = new ArrayList<>();
     private StateMachine stateMachine = new StateMachine();
     private DeadlockDetector detector = new DeadlockDetector();
+    private CSVExporter exporter = new CSVExporter();
     private int aircraftCounter = 1;
 
     // Taxiway segment positions on canvas [x, y, width, height]
     private final String[] segments = {"T1", "T2", "T3", "T4", "T5"};
     private final double[][] segmentBounds = {
-            {50, 130, 80, 40},
+            {50,  130, 80, 40},
             {180, 130, 80, 40},
             {310, 130, 80, 40},
             {440, 130, 80, 40},
@@ -39,6 +41,8 @@ public class MainController {
         drawTaxiwayMap();
     }
 
+    // ─── Drawing ────────────────────────────────────────────────────────────
+
     private void drawTaxiwayMap() {
         GraphicsContext gc = taxiwayCanvas.getGraphicsContext2D();
 
@@ -46,15 +50,13 @@ public class MainController {
         gc.setFill(Color.web("#1a1a2e"));
         gc.fillRect(0, 0, taxiwayCanvas.getWidth(), taxiwayCanvas.getHeight());
 
-        // Draw connections (arrows)
+        // Draw connections
         gc.setStroke(Color.web("#a0a0c0"));
         gc.setLineWidth(2);
-        // T1→T2, T2→T3, T3→T4
-        gc.strokeLine(130, 150, 180, 150);
-        gc.strokeLine(260, 150, 310, 150);
-        gc.strokeLine(390, 150, 440, 150);
-        // T3→T5
-        gc.strokeLine(350, 170, 350, 220);
+        gc.strokeLine(130, 150, 180, 150); // T1 → T2
+        gc.strokeLine(260, 150, 310, 150); // T2 → T3
+        gc.strokeLine(390, 150, 440, 150); // T3 → T4
+        gc.strokeLine(350, 170, 350, 220); // T3 → T5
 
         // Draw segments
         for (int i = 0; i < segments.length; i++) {
@@ -72,6 +74,33 @@ public class MainController {
             gc.fillText(segments[i], x + 30, y + 25);
         }
     }
+
+    private void drawAircraftOnMap() {
+        drawTaxiwayMap();
+        GraphicsContext gc = taxiwayCanvas.getGraphicsContext2D();
+
+        for (Aircraft a : aircraftList) {
+            for (int i = 0; i < segments.length; i++) {
+                if (segments[i].equals(a.getCurrentSegment())) {
+                    double x = segmentBounds[i][0];
+                    double y = segmentBounds[i][1];
+
+                    Color color = switch (a.getState()) {
+                        case TAXIING -> Color.web("#00ff00");
+                        case HOLDING -> Color.web("#ffff00");
+                        case CLEARED -> Color.web("#00aaff");
+                    };
+
+                    gc.setFill(color);
+                    gc.fillOval(x + 60, y - 15, 20, 20);
+                    gc.setFill(Color.BLACK);
+                    gc.fillText(a.getCallsign(), x + 55, y - 2);
+                }
+            }
+        }
+    }
+
+    // ─── Button Handlers ────────────────────────────────────────────────────
 
     @FXML
     private void handleAddAircraft() {
@@ -99,6 +128,7 @@ public class MainController {
             log("⚠ Please select an aircraft from the list first.");
             return;
         }
+
         Aircraft aircraft = aircraftList.get(selected);
         stateMachine.transition(aircraft);
         aircraftListView.getItems().set(selected, aircraft.toString());
@@ -118,30 +148,24 @@ public class MainController {
 
     @FXML
     private void handleExportCSV() {
-        log("📊 CSV Export coming soon...");
-    }
+        if (aircraftList.isEmpty()) {
+            log("⚠ No aircraft to export. Add some aircraft first.");
+            return;
+        }
 
-    private void drawAircraftOnMap() {
-        drawTaxiwayMap();
-        for (Aircraft a : aircraftList) {
-            for (int i = 0; i < segments.length; i++) {
-                if (segments[i].equals(a.getCurrentSegment())) {
-                    double x = segmentBounds[i][0];
-                    double y = segmentBounds[i][1];
-                    Color color = switch (a.getState()) {
-                        case TAXIING -> Color.web("#00ff00");
-                        case HOLDING -> Color.web("#ffff00");
-                        case CLEARED -> Color.web("#00aaff");
-                    };
-                    GraphicsContext gc = taxiwayCanvas.getGraphicsContext2D();
-                    gc.setFill(color);
-                    gc.fillOval(x + 60, y - 15, 20, 20);
-                    gc.setFill(Color.BLACK);
-                    gc.fillText(a.getCallsign(), x + 55, y - 2);
-                }
-            }
+        boolean deadlock = detector.detectDeadlock(aircraftList);
+        String filename = exporter.exportToCSV(aircraftList, deadlock);
+
+        if (filename.startsWith("ERROR")) {
+            log("❌ Export failed: " + filename);
+        } else {
+            log("📊 Exported successfully to: " + filename);
+            log("📂 File saved in your project root folder.");
+            log("💡 Open this CSV in Power BI for visual analysis!");
         }
     }
+
+    // ─── Helper ─────────────────────────────────────────────────────────────
 
     private void log(String message) {
         logArea.appendText(message + "\n");
