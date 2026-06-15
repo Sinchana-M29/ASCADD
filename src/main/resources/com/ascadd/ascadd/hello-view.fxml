@@ -3,10 +3,11 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.canvas.*?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.ascadd.ascadd.MainController"
-            prefWidth="900" prefHeight="600">
+            prefWidth="1000" prefHeight="650">
 
     <!-- TOP: Title Bar -->
     <top>
@@ -22,28 +23,38 @@
     <left>
         <VBox spacing="10" style="-fx-padding: 15; -fx-background-color: #16213e;">
             <Label text="Aircraft" style="-fx-text-fill: white; -fx-font-weight: bold;"/>
-            <ListView fx:id="aircraftListView" prefWidth="200" prefHeight="400"
+            <ListView fx:id="aircraftListView" prefWidth="200" prefHeight="300"
                       style="-fx-background-color: #0f3460; -fx-text-fill: white;"/>
             <Button fx:id="addAircraftBtn" text="+ Add Aircraft"
                     onAction="#handleAddAircraft"
+                    prefWidth="180"
                     style="-fx-background-color: #e94560; -fx-text-fill: white;"/>
             <Button fx:id="transitionBtn" text="⟶ Transition State"
                     onAction="#handleTransition"
+                    prefWidth="180"
                     style="-fx-background-color: #0f3460; -fx-text-fill: white;"/>
+            <Button fx:id="detectBtn" text="🔍 Detect Deadlock"
+                    onAction="#handleDetectDeadlock"
+                    prefWidth="180"
+                    style="-fx-background-color: #e94560; -fx-text-fill: white;
+                           -fx-font-weight: bold;"/>
+            <Button fx:id="exportBtn" text="Export to CSV"
+                    onAction="#handleExportCSV"
+                    prefWidth="180"
+                    style="-fx-background-color: #4a4a8a; -fx-text-fill: white;"/>
         </VBox>
     </left>
 
-    <!-- CENTER: Status Panel -->
+    <!-- CENTER: Canvas + Log -->
     <center>
         <VBox spacing="10" style="-fx-padding: 15;">
+            <Label text="Taxiway Map"
+                   style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+            <Canvas fx:id="taxiwayCanvas" width="700" height="300"/>
             <Label text="Simulation Log"
                    style="-fx-font-weight: bold; -fx-font-size: 14;"/>
-            <TextArea fx:id="logArea" prefHeight="350" editable="false"
+            <TextArea fx:id="logArea" prefHeight="150" editable="false"
                       style="-fx-font-family: monospace;"/>
-            <Button fx:id="detectBtn" text="🔍 Detect Deadlock"
-                    onAction="#handleDetectDeadlock"
-                    style="-fx-background-color: #e94560; -fx-text-fill: white;
-                           -fx-font-size: 14; -fx-font-weight: bold;"/>
         </VBox>
     </center>
 

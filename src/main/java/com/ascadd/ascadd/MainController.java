@@ -2,12 +2,14 @@ package com.ascadd.ascadd;
 
 import com.ascadd.ascadd.Aircraft;
 import com.ascadd.ascadd.AircraftState;
-import com.ascadd.ascadd.StateMachine;
 import com.ascadd.ascadd.DeadlockDetector;
-
+import com.ascadd.ascadd.StateMachine;
 import javafx.fxml.FXML;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
+import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,27 +17,81 @@ public class MainController {
 
     @FXML private ListView<String> aircraftListView;
     @FXML private TextArea logArea;
+    @FXML private Canvas taxiwayCanvas;
 
     private List<Aircraft> aircraftList = new ArrayList<>();
     private StateMachine stateMachine = new StateMachine();
     private DeadlockDetector detector = new DeadlockDetector();
     private int aircraftCounter = 1;
 
-    // Called when "+ Add Aircraft" button is clicked
+    // Taxiway segment positions on canvas [x, y, width, height]
+    private final String[] segments = {"T1", "T2", "T3", "T4", "T5"};
+    private final double[][] segmentBounds = {
+            {50, 130, 80, 40},
+            {180, 130, 80, 40},
+            {310, 130, 80, 40},
+            {440, 130, 80, 40},
+            {310, 220, 80, 40}
+    };
+
+    @FXML
+    public void initialize() {
+        drawTaxiwayMap();
+    }
+
+    private void drawTaxiwayMap() {
+        GraphicsContext gc = taxiwayCanvas.getGraphicsContext2D();
+
+        // Background
+        gc.setFill(Color.web("#1a1a2e"));
+        gc.fillRect(0, 0, taxiwayCanvas.getWidth(), taxiwayCanvas.getHeight());
+
+        // Draw connections (arrows)
+        gc.setStroke(Color.web("#a0a0c0"));
+        gc.setLineWidth(2);
+        // T1→T2, T2→T3, T3→T4
+        gc.strokeLine(130, 150, 180, 150);
+        gc.strokeLine(260, 150, 310, 150);
+        gc.strokeLine(390, 150, 440, 150);
+        // T3→T5
+        gc.strokeLine(350, 170, 350, 220);
+
+        // Draw segments
+        for (int i = 0; i < segments.length; i++) {
+            double x = segmentBounds[i][0];
+            double y = segmentBounds[i][1];
+            double w = segmentBounds[i][2];
+            double h = segmentBounds[i][3];
+
+            gc.setFill(Color.web("#0f3460"));
+            gc.fillRoundRect(x, y, w, h, 10, 10);
+            gc.setStroke(Color.web("#e94560"));
+            gc.strokeRoundRect(x, y, w, h, 10, 10);
+
+            gc.setFill(Color.WHITE);
+            gc.fillText(segments[i], x + 30, y + 25);
+        }
+    }
+
     @FXML
     private void handleAddAircraft() {
-        String callsign = "AC" + String.format("%03d", aircraftCounter++);
-        String current = "T" + (aircraftList.size() + 1);
-        String target = "T" + (aircraftList.size() + 2);
+        if (aircraftCounter > 5) {
+            log("⚠ Maximum 5 aircraft supported in this simulation.");
+            return;
+        }
+        int idx = aircraftCounter - 1;
+        String callsign = "AC" + String.format("%03d", aircraftCounter);
+        String current = segments[idx];
+        String target = segments[Math.min(idx + 1, segments.length - 1)];
 
         Aircraft aircraft = new Aircraft(callsign, current, target);
         aircraftList.add(aircraft);
         aircraftListView.getItems().add(aircraft.toString());
-
         log("✈ Added: " + aircraft);
+        aircraftCounter++;
+        drawAircraftOnMap();
     }
 
-    // Called when "Transition State" button is clicked
     @FXML
     private void handleTransition() {
         int selected = aircraftListView.getSelectionModel().getSelectedIndex();
@@ -43,15 +99,13 @@ public class MainController {
             log("⚠ Please select an aircraft from the list first.");
             return;
         }
-
         Aircraft aircraft = aircraftList.get(selected);
         stateMachine.transition(aircraft);
         aircraftListView.getItems().set(selected, aircraft.toString());
-
         log("⟶ Transitioned: " + aircraft);
+        drawAircraftOnMap();
     }
 
-    // Called when "Detect Deadlock" button is clicked
     @FXML
     private void handleDetectDeadlock() {
         boolean deadlock = detector.detectDeadlock(aircraftList);
@@ -62,7 +116,33 @@ public class MainController {
         }
     }
 
-    // Helper to append messages to the log area
+    @FXML
+    private void handleExportCSV() {
+        log("📊 CSV Export coming soon...");
+    }
+
+    private void drawAircraftOnMap() {
+        drawTaxiwayMap();
+        for (Aircraft a : aircraftList) {
+            for (int i = 0; i < segments.length; i++) {
+                if (segments[i].equals(a.getCurrentSegment())) {
+                    double x = segmentBounds[i][0];
+                    double y = segmentBounds[i][1];
+                    Color color = switch (a.getState()) {
+                        case TAXIING -> Color.web("#00ff00");
+                        case HOLDING -> Color.web("#ffff00");
+                        case CLEARED -> Color.web("#00aaff");
+                    };
+                    GraphicsContext gc = taxiwayCanvas.getGraphicsContext2D();
+                    gc.setFill(color);
+                    gc.fillOval(x + 60, y - 15, 20, 20);
+                    gc.setFill(Color.BLACK);
+                    gc.fillText(a.getCallsign(), x + 55, y - 2);
+                }
+            }
+        }
+    }
+
     private void log(String message) {
         logArea.appendText(message + "\n");
     }
