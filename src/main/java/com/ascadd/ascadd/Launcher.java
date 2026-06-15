@@ -1,9 +1,9 @@
 package com.ascadd.ascadd;
 
-import javafx.application.Application;
+import com.ascadd.ascadd.HelloApplication;
 
 public class Launcher {
     public static void main(String[] args) {
-        Application.launch(HelloApplication.class, args);
+        HelloApplication.main(args);
     }
 }

@@ -1,16 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<?import javafx.scene.control.Button?>
-<VBox alignment="CENTER" spacing="20.0" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.ascadd.ascadd.HelloController">
-    <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
-    </padding>
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.ascadd.ascadd.MainController"
+            prefWidth="900" prefHeight="600">
 
-    <Label fx:id="welcomeText"/>
-    <Button text="Hello!" onAction="#onHelloButtonClick"/>
-</VBox>
+    <!-- TOP: Title Bar -->
+    <top>
+        <VBox style="-fx-background-color: #1a1a2e; -fx-padding: 15;">
+            <Label text="✈ ASCADD — Airport Surface Congestion &amp; Taxiway Deadlock Detector"
+                   style="-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;"/>
+            <Label text="Real-time aircraft state tracking and deadlock detection"
+                   style="-fx-text-fill: #a0a0c0; -fx-font-size: 12;"/>
+        </VBox>
+    </top>
+
+    <!-- LEFT: Aircraft List -->
+    <left>
+        <VBox spacing="10" style="-fx-padding: 15; -fx-background-color: #16213e;">
+            <Label text="Aircraft" style="-fx-text-fill: white; -fx-font-weight: bold;"/>
+            <ListView fx:id="aircraftListView" prefWidth="200" prefHeight="400"
+                      style="-fx-background-color: #0f3460; -fx-text-fill: white;"/>
+            <Button fx:id="addAircraftBtn" text="+ Add Aircraft"
+                    onAction="#handleAddAircraft"
+                    style="-fx-background-color: #e94560; -fx-text-fill: white;"/>
+            <Button fx:id="transitionBtn" text="⟶ Transition State"
+                    onAction="#handleTransition"
+                    style="-fx-background-color: #0f3460; -fx-text-fill: white;"/>
+        </VBox>
+    </left>
+
+    <!-- CENTER: Status Panel -->
+    <center>
+        <VBox spacing="10" style="-fx-padding: 15;">
+            <Label text="Simulation Log"
+                   style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+            <TextArea fx:id="logArea" prefHeight="350" editable="false"
+                      style="-fx-font-family: monospace;"/>
+            <Button fx:id="detectBtn" text="🔍 Detect Deadlock"
+                    onAction="#handleDetectDeadlock"
+                    style="-fx-background-color: #e94560; -fx-text-fill: white;
+                           -fx-font-size: 14; -fx-font-weight: bold;"/>
+        </VBox>
+    </center>
+
+</BorderPane>
